@@ -7,4 +7,12 @@ layout:
 - go.kubebuilder.io/v4
 projectName: agent
 repo: github.com/flemzord/om-agent
+resources:
+- controller: true
+  core: true
+  domain: k8s.io
+  group: networking
+  kind: Ingress
+  path: k8s.io/api/networking/v1
+  version: v1
 version: "3"
