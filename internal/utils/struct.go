@@ -130,15 +130,19 @@ func DeleteHealthCheck(resource IngressInfo) (string, error) {
 }
 
 func CreateOrUpdateHealthCheck(resource IngressInfo) (string, error) {
-	findBool, _ := FindHealthCheck(resource.Name)
+	jsonData, err := json.Marshal(resource)
+	findBool, healthCheckID := FindHealthCheck(resource.Name)
 	if findBool {
 		// TODO: Update Health Check
+		updateRequest, err := ExecuteAPIRequest("PUT", fmt.Sprintf("/api/configurations/%s", healthCheckID), jsonData)
+		if err != nil {
+			return "", err
+		}
+		log.Log.Info("health check updated", "Status", updateRequest.Status)
 		log.Log.Info("health check already exists")
 		return "", nil
 	}
-	log.Log.Info("health check does not exist")
-	// TODO: Create Health Check
-	jsonData, err := json.Marshal(resource)
+	log.Log.Info("health check does not exist, creating it")
 	if err != nil {
 		return "", err
 	}
