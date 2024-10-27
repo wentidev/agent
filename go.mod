@@ -1,4 +1,4 @@
-module github.com/flemzord/om-agent
+module github.com/flemzord/wenti-agent
 
 go 1.22.0
 
