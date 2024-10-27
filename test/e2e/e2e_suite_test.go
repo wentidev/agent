@@ -25,7 +25,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/flemzord/om-agent/test/utils"
+	"github.com/wentidev/agent/test/utils"
 )
 
 var (

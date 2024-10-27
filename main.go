@@ -19,7 +19,7 @@ package main
 import (
 	"crypto/tls"
 	"flag"
-	"github.com/flemzord/om-agent/internal/utils"
+	"github.com/wentidev/agent/internal/utils"
 	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -36,7 +36,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	"github.com/flemzord/om-agent/internal/controller"
+	"github.com/wentidev/agent/internal/controller"
 	// +kubebuilder:scaffold:imports
 )
 

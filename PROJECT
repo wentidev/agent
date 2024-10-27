@@ -6,7 +6,7 @@ domain: wenti.dev
 layout:
 - go.kubebuilder.io/v4
 projectName: agent
-repo: github.com/flemzord/om-agent
+repo: github.com/wentidev/agent
 resources:
 - controller: true
   core: true

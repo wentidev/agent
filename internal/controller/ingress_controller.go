@@ -19,7 +19,7 @@ package controller
 import (
 	"context"
 	"fmt"
-	"github.com/flemzord/om-agent/internal/utils"
+	"github.com/wentidev/agent/internal/utils"
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
