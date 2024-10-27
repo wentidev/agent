@@ -18,7 +18,8 @@ package controller
 
 import (
 	"context"
-
+	"fmt"
+	"github.com/flemzord/om-agent/internal/utils"
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -36,20 +37,41 @@ type IngressReconciler struct {
 // +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses/finalizers,verbs=update
 
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the Ingress object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.19.0/pkg/reconcile
 func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
-	// TODO(user): your logic here
+	// Retrieve the ingress object
+	ingress := &networkingv1.Ingress{}
+	err := r.Get(ctx, req.NamespacedName, ingress)
+	if err != nil {
+		_, err := utils.DeleteHealthCheck(utils.IngressInfo{
+			Name: fmt.Sprintf("%s_%s", req.Namespace, req.Name),
+		})
+		if err != nil {
+			log.Log.Error(err, "unable to delete health check")
+			return ctrl.Result{}, err
+		}
+		log.Log.Info("ingress is being deleted")
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
 
+	check, err := utils.CreateOrUpdateHealthCheck(utils.IngressInfo{
+		Name:        fmt.Sprintf("%s_%s", ingress.Namespace, ingress.Name),
+		Description: fmt.Sprintf("%s_%s", ingress.Namespace, ingress.Name),
+		Target:      ingress.Spec.Rules[0].Host,
+		Port:        utils.GetStringAnnotation(ingress, utils.HealthCheckPort),
+		Protocol:    utils.GetStringAnnotation(ingress, utils.HealthCheckProtocol),
+		Path:        utils.GetStringAnnotation(ingress, utils.HealthCheckPath),
+		Method:      utils.GetStringAnnotation(ingress, utils.HealthCheckMethod),
+		HTTPCode:    utils.GetStringAnnotation(ingress, utils.HealthCheckHTTPCode),
+		Timeout:     utils.GetStringAnnotation(ingress, utils.HealthCheckTimeout),
+		Interval:    utils.GetStringAnnotation(ingress, utils.HealthCheckInterval),
+		Enabled:     true,
+	})
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	log.Log.Info("health check response", "Status", check)
 	return ctrl.Result{}, nil
 }
 

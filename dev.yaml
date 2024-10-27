@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-ingress
+  namespace: default
+  annotations:
+    my.domain/health-check-port: "443"
+    my.domain/health-check-interval: "10"
+    my.domain/health-check-timeout: "5"
+    my.domain/health-check-path: /
+    my.domain/health-check-protocol: HTTP
+    my.domain/health-check-method: GET
+    my.domain/health-check-success-codes: "200"
+spec:
+  rules:
+    - host: formance.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: my-service
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - example.com
+      secretName: example-com-tls
