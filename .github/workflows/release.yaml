@@ -4,13 +4,15 @@ on:
   release:
     types: [published]
 
-permissions:
-  packages: write
-
 jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
     steps:
       - name: Clone the code
         uses: actions/checkout@v4
