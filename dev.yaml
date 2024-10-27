@@ -4,16 +4,16 @@ metadata:
   name: my-ingress
   namespace: default
   annotations:
-    my.domain/health-check-port: "443"
-    my.domain/health-check-interval: "10"
-    my.domain/health-check-timeout: "5"
-    my.domain/health-check-path: /
-    my.domain/health-check-protocol: HTTP
-    my.domain/health-check-method: GET
-    my.domain/health-check-success-codes: "200"
+    wenti.dev/health-check-port: "443"
+    wenti.dev/health-check-interval: "10"
+    wenti.dev/health-check-timeout: "5"
+    wenti.dev/health-check-path: /
+    wenti.dev/health-check-protocol: HTTP
+    wenti.dev/health-check-method: GET
+    wenti.dev/health-check-success-codes: "200"
 spec:
   rules:
-    - host: formance.com
+    - host: example.com
       http:
         paths:
           - path: /

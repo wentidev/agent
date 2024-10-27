@@ -26,13 +26,13 @@ type IngressInfo struct {
 	Enabled     bool   `json:"enabled"`
 }
 
-var HealthCheckPath string = "my.domain/health-check-path"
-var HealthCheckProtocol string = "my.domain/health-check-protocol"
-var HealthCheckMethod string = "my.domain/health-check-method"
-var HealthCheckHTTPCode string = "my.domain/health-check-success-codes"
-var HealthCheckTimeout string = "my.domain/health-check-timeout"
-var HealthCheckInterval string = "my.domain/health-check-interval"
-var HealthCheckPort string = "my.domain/health-check-port"
+var HealthCheckPath string = "wenti.dev/health-check-path"
+var HealthCheckProtocol string = "wenti.dev/health-check-protocol"
+var HealthCheckMethod string = "wenti.dev/health-check-method"
+var HealthCheckHTTPCode string = "wenti.dev/health-check-success-codes"
+var HealthCheckTimeout string = "wenti.dev/health-check-timeout"
+var HealthCheckInterval string = "wenti.dev/health-check-interval"
+var HealthCheckPort string = "wenti.dev/health-check-port"
 
 // Find value of annotation in ingress
 func GetStringAnnotation(ingress *networkingv1.Ingress, annotation string) string {
