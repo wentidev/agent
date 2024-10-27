@@ -19,4 +19,4 @@ jobs:
 
       - uses: ko-build/setup-ko@v0.6
       - name: Run Ko
-        run: ko build ./
+        run: ko build --bare ./
