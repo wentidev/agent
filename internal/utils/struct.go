@@ -133,7 +133,6 @@ func CreateOrUpdateHealthCheck(resource IngressInfo) (string, error) {
 	jsonData, err := json.Marshal(resource)
 	findBool, healthCheckID := FindHealthCheck(resource.Name)
 	if findBool {
-		// TODO: Update Health Check
 		updateRequest, err := ExecuteAPIRequest("PUT", fmt.Sprintf("/api/configurations/%s", healthCheckID), jsonData)
 		if err != nil {
 			return "", err
