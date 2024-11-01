@@ -20,5 +20,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - run: helm repo add cert-manager https://charts.jetstack.io
+      - run: helm dependency update
+        working-directory: ./helm/agent
+      - run: helm dependency build  
+        working-directory: ./helm/agent
       - run: helm package helm/agent
       - run: helm push agent-*.tgz oci://ghcr.io/wentidev/helm
