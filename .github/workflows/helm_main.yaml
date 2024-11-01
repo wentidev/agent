@@ -19,5 +19,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - run: helm repo add cert-manager https://charts.jetstack.io
       - run: helm package helm/agent
       - run: helm push agent-*.tgz oci://ghcr.io/wentidev/helm
