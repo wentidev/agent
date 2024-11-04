@@ -69,7 +69,7 @@ type HealthCheck struct {
 
 func FindHealthCheck(name string) (bool, string) {
 	log.Log.Info("looking for health check", "Name", name)
-	resp, err := ExecuteAPIRequest("GET", "/api/configurations", nil)
+	resp, err := ExecuteAPIRequest("GET", "/api/v1/configurations", nil)
 	if err != nil {
 		log.Log.Error(err, "unable to retrieve health checks")
 		return false, ""
@@ -121,7 +121,7 @@ func DeleteHealthCheck(resource IngressInfo) (string, error) {
 		return "", nil
 	}
 	log.Log.Info("health check exists with ID", "HealthCheckID", healthCheckID)
-	request, err := ExecuteAPIRequest("DELETE", fmt.Sprintf("/api/configurations/%s", healthCheckID), nil)
+	request, err := ExecuteAPIRequest("DELETE", fmt.Sprintf("/api/v1/configurations/%s", healthCheckID), nil)
 	if err != nil {
 		return "", err
 	}
@@ -133,7 +133,7 @@ func CreateOrUpdateHealthCheck(resource IngressInfo) (string, error) {
 	jsonData, err := json.Marshal(resource)
 	findBool, healthCheckID := FindHealthCheck(resource.Name)
 	if findBool {
-		updateRequest, err := ExecuteAPIRequest("PUT", fmt.Sprintf("/api/configurations/%s", healthCheckID), jsonData)
+		updateRequest, err := ExecuteAPIRequest("PUT", fmt.Sprintf("/api/v1/configurations/%s", healthCheckID), jsonData)
 		if err != nil {
 			return "", err
 		}
@@ -145,7 +145,7 @@ func CreateOrUpdateHealthCheck(resource IngressInfo) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	request, err := ExecuteAPIRequest("POST", "/api/configurations", jsonData)
+	request, err := ExecuteAPIRequest("POST", "/api/v1/configurations", jsonData)
 	if err != nil {
 		return "", err
 	}
