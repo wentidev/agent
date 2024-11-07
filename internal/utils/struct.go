@@ -103,6 +103,7 @@ func ExecuteAPIRequest(method string, path string, body []byte) (*http.Response,
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", AppToken))
+	req.Header.Set("Accept", "application/json")
 
 	// Send the request
 	c := &http.Client{}
