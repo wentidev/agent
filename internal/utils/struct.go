@@ -111,7 +111,7 @@ func ExecuteAPIRequest(method string, path string, body []byte) (*http.Response,
 	if err != nil {
 		return nil, err
 	}
-	//defer resp.Body.Close()
+	defer resp.Body.Close()
 	return resp, nil
 }
 
