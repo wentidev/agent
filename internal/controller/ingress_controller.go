@@ -56,7 +56,6 @@ func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	// TODO: Check for every parameter if exists
 	ingressInfo := utils.NewIngressInfo()
 	ingressInfo.Name = fmt.Sprintf("%s_%s", ingress.Namespace, ingress.Name)
 	ingressInfo.Description = fmt.Sprintf("%s_%s", ingress.Namespace, ingress.Name)
