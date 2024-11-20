@@ -2,8 +2,9 @@ package utils
 
 import (
 	"bytes"
-	"encoding/json"
+	"context"
 	"fmt"
+	clientsdk "github.com/wentidev/sdk-go"
 	"io"
 	networkingv1 "k8s.io/api/networking/v1"
 	"net/http"
@@ -34,17 +35,6 @@ var HealthCheckTimeout string = "wenti.dev/health-check-timeout"
 var HealthCheckInterval string = "wenti.dev/health-check-interval"
 var HealthCheckPort string = "wenti.dev/health-check-port"
 
-// Find value of annotation in ingress
-func GetStringAnnotation(ingress *networkingv1.Ingress, annotation string) string {
-	if ingress.Annotations == nil {
-		return ""
-	}
-	if value, ok := ingress.Annotations[annotation]; ok {
-		return value
-	}
-	return ""
-}
-
 type HealthCheck struct {
 	Count      int `json:"count"`
 	HTTPChecks []struct {
@@ -67,52 +57,63 @@ type HealthCheck struct {
 	} `json:"http-checks"`
 }
 
+// GetStringAnnotation Find value of annotation in ingress
+func GetStringAnnotation(ingress *networkingv1.Ingress, annotation string) string {
+	if ingress.Annotations == nil {
+		return ""
+	}
+	if value, ok := ingress.Annotations[annotation]; ok {
+		return value
+	}
+	return ""
+}
+
+func HeaderInterceptor(ctx context.Context, req *http.Request) error {
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", AppToken))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	return nil
+}
+
+func CreateClient() (*clientsdk.ClientWithResponses, error) {
+	client, err := clientsdk.NewClientWithResponses(AppURL, clientsdk.WithRequestEditorFn(HeaderInterceptor))
+	if err != nil {
+		log.Log.Error(err, "unable to create client")
+		return nil, err
+	}
+	return client, nil
+}
+
 func FindHealthCheck(name string) (bool, string) {
 	log.Log.Info("looking for health check", "Name", name)
-	resp, err := ExecuteAPIRequest("GET", "/api/v1/healthchecks", nil)
+	client, err := CreateClient()
+	if err != nil {
+		log.Log.Error(err, "unable to create client")
+		return false, ""
+	}
+	resp, err := client.GetApiV1HealthchecksWithResponse(context.Background())
 	if err != nil {
 		log.Log.Error(err, "unable to retrieve health checks")
 		return false, ""
 	}
-	var healthChecks HealthCheck
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Log.Error(err, "unable to read response body")
+	if resp.HTTPResponse.StatusCode != http.StatusOK || resp.HTTPResponse.Header.Get("Content-Type") != "application/json" {
+		log.Log.Error(err, "statusCode or Content-Type is not valid")
 		return false, ""
 	}
-	err = json.Unmarshal(data, &healthChecks)
-	if err != nil {
-		log.Log.Error(err, "unable to unmarshal health checks")
+
+	if resp.JSON200 == nil {
+		log.Log.Error(err, "JSON200 is nil")
 		return false, ""
 	}
-	log.Log.Info("health checks found", "HealthChecks", healthChecks)
-	for _, healthCheck := range healthChecks.HTTPChecks {
-		if healthCheck.Name == name {
+
+	for _, healthCheck := range *resp.JSON200.HttpChecks {
+		if healthCheck.Name == &name {
 			log.Log.Info("health check found", "Name", healthCheck.Name)
-			log.Log.Info("health check found", "ID", healthCheck.ID)
-			return true, healthCheck.ID
+			log.Log.Info("health check found", "ID", healthCheck.Id)
+			return true, *healthCheck.Id
 		}
 	}
 	return false, ""
-}
-
-func ExecuteAPIRequest(method string, path string, body []byte) (*http.Response, error) {
-	req, err := http.NewRequest(method, fmt.Sprintf("%s%s", AppURL, path), bytes.NewBuffer(body))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", AppToken))
-	req.Header.Set("Accept", "application/json")
-
-	// Send the request
-	c := &http.Client{}
-	resp, err := c.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	return resp, nil
 }
 
 func DeleteHealthCheck(resource IngressInfo) (string, error) {
@@ -122,33 +123,167 @@ func DeleteHealthCheck(resource IngressInfo) (string, error) {
 		return "", nil
 	}
 	log.Log.Info("health check exists with ID", "HealthCheckID", healthCheckID)
-	request, err := ExecuteAPIRequest("DELETE", fmt.Sprintf("/api/v1/healthchecks/%s", healthCheckID), nil)
+	err := wentiApiDeleteHealthCheck(healthCheckID)
 	if err != nil {
 		return "", err
 	}
-	log.Log.Info("health check deleted", "Status", request.Status)
-	return request.Status, nil
+	return "deleted", nil
 }
 
 func CreateOrUpdateHealthCheck(resource IngressInfo) (string, error) {
-	jsonData, err := json.Marshal(resource)
 	findBool, healthCheckID := FindHealthCheck(resource.Name)
+
 	if findBool {
-		updateRequest, err := ExecuteAPIRequest("PUT", fmt.Sprintf("/api/v1/healthchecks/%s", healthCheckID), jsonData)
+		status, err := wentiApiUpdateHealthCheck(resource, healthCheckID)
 		if err != nil {
 			return "", err
 		}
-		log.Log.Info("health check updated", "Status", updateRequest.Status)
-		log.Log.Info("health check already exists")
-		return "", nil
+		return status, nil
 	}
 	log.Log.Info("health check does not exist, creating it")
+	status, err := wentiApiCreateHealthCheck(resource)
 	if err != nil {
 		return "", err
 	}
-	request, err := ExecuteAPIRequest("POST", "/api/v1/healthchecks", jsonData)
+	return status, nil
+
+}
+
+func wentiApiDeleteHealthCheck(HealthCheckId string) error {
+	client, err := CreateClient()
 	if err != nil {
+		log.Log.Error(err, "(delete) unable to update client")
+		return err
+	}
+	resp, err := client.DeleteApiV1HealthchecksIdWithResponse(context.Background(), HealthCheckId)
+	if err != nil {
+		log.Log.Error(err, "(delete) error in API")
+		return err
+	}
+
+	if resp.HTTPResponse.StatusCode != http.StatusNoContent || resp.HTTPResponse.Header.Get("Content-Type") != "application/json" {
+		log.Log.Error(err, "(delete) statusCode or Content-Type is not valid")
+		return err
+	}
+	return nil
+}
+
+func wentiApiCreateHealthCheck(resource IngressInfo) (string, error) {
+	client, err := CreateClient()
+	if err != nil {
+		log.Log.Error(err, "(create) unable to update client")
 		return "", err
 	}
-	return request.Status, nil
+
+	// Convert for interval
+	interval, err := ConvertStringToInt(resource.Interval)
+	if err != nil {
+		log.Log.Error(err, "(create) unable to convert string to int")
+		return "", err
+	}
+
+	// Convert for timeout
+	timeout, err := ConvertStringToInt(resource.Timeout)
+	if err != nil {
+		log.Log.Error(err, "(create) unable to convert string to int")
+		return "", err
+	}
+
+	// Convert for port
+	port, err := ConvertStringToInt(resource.Port)
+	if err != nil {
+		log.Log.Error(err, "(create) unable to convert string to int")
+		return "", err
+	}
+	resp, err := client.PostApiV1HealthchecksWithResponse(context.Background(), clientsdk.PostApiV1HealthchecksJSONRequestBody{
+		Body:        &resource.Target,
+		Description: resource.Description,
+		ContentType: &resource.Protocol,
+		Enabled:     true,
+		HttpCode:    resource.Method,
+		Interval:    interval,
+		Method:      resource.Method,
+		Name:        resource.Name,
+		Path:        resource.Path,
+		Port:        port,
+		Protocol:    resource.Protocol,
+		Target:      resource.Target,
+		Timeout:     timeout,
+	})
+	if err != nil {
+		log.Log.Error(err, "(create) unable to retrieve health checks")
+		return "", err
+	}
+
+	if resp.HTTPResponse.StatusCode != http.StatusCreated || resp.HTTPResponse.Header.Get("Content-Type") != "application/json" {
+		log.Log.Info("create", "statusCode", resp.HTTPResponse.StatusCode)
+		log.Log.Info("create", "headers", resp.HTTPResponse.Header.Get("Content-Type"))
+		toto := bytes.NewReader(resp.Body)
+		data, err := io.ReadAll(toto)
+		if err != nil {
+			log.Log.Error(err, "unable to read response body")
+			return "", err
+		}
+		log.Log.Info("create", "data", string(data))
+
+		log.Log.Error(err, "(create) statusCode or Content-Type is not valid")
+		return "", err
+	}
+	return "created", nil
+}
+
+func wentiApiUpdateHealthCheck(resource IngressInfo, HealthCheckID string) (string, error) {
+	client, err := CreateClient()
+	if err != nil {
+		log.Log.Error(err, "(update) unable to update client")
+		return "", err
+	}
+
+	// Convert for interval
+	interval, err := ConvertStringToInt(resource.Interval)
+	if err != nil {
+		log.Log.Error(err, "(update) unable to convert string to int")
+		return "", err
+	}
+
+	// Convert for timeout
+	timeout, err := ConvertStringToInt(resource.Timeout)
+	if err != nil {
+		log.Log.Error(err, "(update) unable to convert string to int")
+		return "", err
+	}
+
+	// Convert for port
+	port, err := ConvertStringToInt(resource.Port)
+	if err != nil {
+		log.Log.Error(err, "(update) unable to convert string to int")
+		return "", err
+	}
+
+	resp, err := client.PutApiV1HealthchecksIdWithResponse(context.Background(), HealthCheckID, clientsdk.PutApiV1HealthchecksIdJSONRequestBody{
+		Body:        &resource.Target,
+		Description: resource.Description,
+		ContentType: &resource.Protocol,
+		Enabled:     true,
+		HttpCode:    resource.Method,
+		Interval:    interval,
+		Method:      resource.Method,
+		Name:        resource.Name,
+		Path:        resource.Path,
+		Port:        port,
+		Protocol:    resource.Protocol,
+		Target:      resource.Target,
+		Timeout:     timeout,
+	})
+	if err != nil {
+		log.Log.Error(err, "(update) unable to retrieve health checks")
+		return "", err
+	}
+
+	if resp.HTTPResponse.StatusCode != http.StatusNoContent || resp.HTTPResponse.Header.Get("Content-Type") != "application/json" {
+		log.Log.Error(err, "(update) statusCode or Content-Type is not valid")
+		return "", err
+	}
+
+	return "updated", nil
 }
