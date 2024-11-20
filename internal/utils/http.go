@@ -85,11 +85,11 @@ func FindHealthCheck(name string) (bool, string) {
 		log.Log.Error(err, "unable to unmarshal health checks")
 		return false, ""
 	}
-	log.Log.Info(("health checks found"), "HealthChecks", healthChecks)
+	log.Log.Info("health checks found", "HealthChecks", healthChecks)
 	for _, healthCheck := range healthChecks.HTTPChecks {
 		if healthCheck.Name == name {
-			log.Log.Info(("health check found"), "Name", healthCheck.Name)
-			log.Log.Info(("health check found"), "ID", healthCheck.ID)
+			log.Log.Info("health check found", "Name", healthCheck.Name)
+			log.Log.Info("health check found", "ID", healthCheck.ID)
 			return true, healthCheck.ID
 		}
 	}
