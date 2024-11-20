@@ -73,28 +73,28 @@ func FindHealthCheck(name string) (bool, string) {
 	log.Log.Info("looking for health check", "Name", name)
 	client, err := CreateClient()
 	if err != nil {
-		log.Log.Error(err, "unable to create client")
+		log.Log.Error(err, "(find) unable to create client")
 		return false, ""
 	}
 	resp, err := client.GetApiV1HealthchecksWithResponse(context.Background())
 	if err != nil {
-		log.Log.Error(err, "unable to retrieve health checks")
+		log.Log.Error(err, "(find) unable to retrieve health checks")
 		return false, ""
 	}
 	if resp.HTTPResponse.StatusCode != http.StatusOK || resp.HTTPResponse.Header.Get("Content-Type") != "application/json" {
-		log.Log.Error(err, "statusCode or Content-Type is not valid")
+		log.Log.Error(err, "(find) statusCode or Content-Type is not valid")
 		return false, ""
 	}
 
 	if resp.JSON200 == nil {
-		log.Log.Error(err, "JSON200 is nil")
+		log.Log.Error(err, "(find) JSON200 is nil")
 		return false, ""
 	}
 
 	for _, healthCheck := range *resp.JSON200.HttpChecks {
 		if healthCheck.Name == &name {
-			log.Log.Info("health check found", "Name", healthCheck.Name)
-			log.Log.Info("health check found", "ID", healthCheck.Id)
+			log.Log.Info("(find) health check found", "Name", healthCheck.Name)
+			log.Log.Info("(find) health check found", "ID", healthCheck.Id)
 			return true, *healthCheck.Id
 		}
 	}
@@ -210,7 +210,6 @@ func wentiApiCreateHealthCheck(resource IngressInfo) (string, error) {
 			return "", err
 		}
 		log.Log.Info("create", "data", string(data))
-
 		log.Log.Error(err, "(create) statusCode or Content-Type is not valid")
 		return "", err
 	}
