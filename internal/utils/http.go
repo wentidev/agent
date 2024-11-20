@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	clientsdk "github.com/wentidev/sdk-go"
 	"io"
-	networkingv1 "k8s.io/api/networking/v1"
 	"net/http"
+
+	clientsdk "github.com/wentidev/sdk-go"
+	networkingv1 "k8s.io/api/networking/v1"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
