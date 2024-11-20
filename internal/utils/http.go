@@ -12,22 +12,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-type IngressInfo struct {
-	Name string `json:"name"`
-
-	// optional
-	Description string `json:"description"`
-	Target      string `json:"target"`
-	Port        string `json:"port"`
-	Protocol    string `json:"protocol"`
-	Path        string `json:"path"`
-	Method      string `json:"method"`
-	Timeout     string `json:"timeout"`
-	Interval    string `json:"interval"`
-	HTTPCode    string `json:"httpCode"`
-	Enabled     bool   `json:"enabled"`
-}
-
 var HealthCheckPath string = "wenti.dev/health-check-path"
 var HealthCheckProtocol string = "wenti.dev/health-check-protocol"
 var HealthCheckMethod string = "wenti.dev/health-check-method"
