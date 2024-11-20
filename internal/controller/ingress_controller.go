@@ -61,13 +61,27 @@ func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	ingressInfo.Name = fmt.Sprintf("%s_%s", ingress.Namespace, ingress.Name)
 	ingressInfo.Description = fmt.Sprintf("%s_%s", ingress.Namespace, ingress.Name)
 	ingressInfo.Target = ingress.Spec.Rules[0].Host
-	ingressInfo.Port = utils.GetStringAnnotation(ingress, utils.HealthCheckPort)
-	ingressInfo.Protocol = utils.GetStringAnnotation(ingress, utils.HealthCheckProtocol)
-	ingressInfo.Path = utils.GetStringAnnotation(ingress, utils.HealthCheckPath)
-	ingressInfo.Method = utils.GetStringAnnotation(ingress, utils.HealthCheckMethod)
-	ingressInfo.HTTPCode = utils.GetStringAnnotation(ingress, utils.HealthCheckHTTPCode)
-	ingressInfo.Timeout = utils.GetStringAnnotation(ingress, utils.HealthCheckTimeout)
-	ingressInfo.Interval = utils.GetStringAnnotation(ingress, utils.HealthCheckInterval)
+	if utils.GetStringAnnotation(ingress, utils.HealthCheckPort) != "" {
+		ingressInfo.Port = utils.GetStringAnnotation(ingress, utils.HealthCheckPort)
+	}
+	if utils.GetStringAnnotation(ingress, utils.HealthCheckProtocol) != "" {
+		ingressInfo.Protocol = utils.GetStringAnnotation(ingress, utils.HealthCheckProtocol)
+	}
+	if utils.GetStringAnnotation(ingress, utils.HealthCheckPath) != "" {
+		ingressInfo.Path = utils.GetStringAnnotation(ingress, utils.HealthCheckPath)
+	}
+	if utils.GetStringAnnotation(ingress, utils.HealthCheckMethod) != "" {
+		ingressInfo.Method = utils.GetStringAnnotation(ingress, utils.HealthCheckMethod)
+	}
+	if utils.GetStringAnnotation(ingress, utils.HealthCheckHTTPCode) != "" {
+		ingressInfo.HTTPCode = utils.GetStringAnnotation(ingress, utils.HealthCheckHTTPCode)
+	}
+	if utils.GetStringAnnotation(ingress, utils.HealthCheckTimeout) != "" {
+		ingressInfo.Timeout = utils.GetStringAnnotation(ingress, utils.HealthCheckTimeout)
+	}
+	if utils.GetStringAnnotation(ingress, utils.HealthCheckInterval) != "" {
+		ingressInfo.Interval = utils.GetStringAnnotation(ingress, utils.HealthCheckInterval)
+	}
 
 	check, err := utils.CreateOrUpdateHealthCheck(ingressInfo)
 	if err != nil {
